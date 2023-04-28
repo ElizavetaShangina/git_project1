@@ -8,24 +8,34 @@ def map_setting(toponym_to_find):
         "format": "json"}
 
     response = requests.get(geocoder_api_server, params=geocoder_params)
-
     if not response:
-        print('ERROR')
+        print('ERROR', response)
+        return
+    json_response = response.json()
+    toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+    toponym_coodrinates = toponym["Point"]["pos"]
+    point_toponym = list(toponym_coodrinates.split())
+    search_params = {
+        "apikey": "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3",
+        "text": "аптека",
+        "lang": "ru_RU",
+        "ll": ','.join(point_toponym),
+        "type": "biz"
+    }
+    response2 = requests.get("https://search-maps.yandex.ru/v1/", params=search_params)
+    if not response2:
+        print('ERROR2', response2)
         return
 
-    json_response = response.json()
-    toponym = json_response["response"]["GeoObjectCollection"][
-        "featureMember"][0]["GeoObject"]
-
-    toponym_coodrinates = toponym["Point"]["pos"]
-    upper_corner = list(map(float, toponym["boundedBy"]["Envelope"]['upperCorner'].split()))
-    lower_corner = list(map(float, toponym["boundedBy"]["Envelope"]['lowerCorner'].split()))
-    points = [i for i in toponym_coodrinates.split()]
-    spn = [str(upper_corner[0] - lower_corner[0]), str(upper_corner[1] - lower_corner[1])]
+    json_response = response2.json()
+    organization = json_response["features"][0]
+    org_name = organization["properties"]["CompanyMetaData"]["name"]
+    org_address = organization["properties"]["CompanyMetaData"]["address"]
+    org_time = organization["properties"]["CompanyMetaData"]["Hours"]['text']
+    point = list(map(str, organization["geometry"]["coordinates"]))
+    print(org_name, org_address, org_time, ((float(point_toponym[0]) - float(point[0])) ** 2 +
+                                            (float(point_toponym[1]) - float(point[1])) ** 2) ** 0.5, sep='\n')
     map_params = {
         "l": "map",
-        "pt": "{0},pm2dgl".format(','.join(points)),
-        "ll": ','.join(points),
-        "spn": ','.join(spn)
-    }
+        "pt": "{0},pm2dgl~{1},pmntl".format(','.join(point_toponym), ','.join(point))}
     return map_params
