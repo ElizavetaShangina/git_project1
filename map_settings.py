@@ -27,15 +27,25 @@ def map_setting(toponym_to_find):
     if not response2:
         print('ERROR2', response2)
         return
-
-    json_response = response2.json()
-    organization = json_response["features"][0]
-    org_name = organization["properties"]["CompanyMetaData"]["name"]
-    org_address = organization["properties"]["CompanyMetaData"]["address"]
-    org_time = organization["properties"]["CompanyMetaData"]["Hours"]['text']
-    point = list(map(str, organization["geometry"]["coordinates"]))
-    print(org_name, org_address, org_time,lonlat_distance(map(float, point_toponym), map(float, point)) , sep='\n')
+    points = [','.join(point_toponym) + ',pmntm']
+    for i in range(10):
+        json_response = response2.json()
+        organization = json_response["features"][i]
+        org_name = organization["properties"]["CompanyMetaData"]["name"]
+        org_address = organization["properties"]["CompanyMetaData"]["address"]
+        org_time = organization["properties"]["CompanyMetaData"]["Hours"]['text']
+        point = list(map(str, organization["geometry"]["coordinates"]))
+        new_point = ','.join(point)
+        if 'круглосуточно' in org_time:
+            new_point += ',pmgns'
+        elif org_time:
+            new_point += ',pmbls'
+        else:
+            new_point += ',pmgrs'
+        points.append(new_point)
+        print(org_name, org_address, org_time,lonlat_distance(map(float, point_toponym), map(float, point)) , sep='\n')
+    pt = '~'.join(points)
     map_params = {
         "l": "map",
-        "pt": "{0},pm2dgl~{1},pmntl".format(','.join(point_toponym), ','.join(point))}
+        "pt": pt}
     return map_params
