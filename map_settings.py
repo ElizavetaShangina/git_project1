@@ -1,4 +1,5 @@
 import requests
+from distanse import lonlat_distance
 
 def map_setting(toponym_to_find):
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
@@ -33,8 +34,7 @@ def map_setting(toponym_to_find):
     org_address = organization["properties"]["CompanyMetaData"]["address"]
     org_time = organization["properties"]["CompanyMetaData"]["Hours"]['text']
     point = list(map(str, organization["geometry"]["coordinates"]))
-    print(org_name, org_address, org_time, ((float(point_toponym[0]) - float(point[0])) ** 2 +
-                                            (float(point_toponym[1]) - float(point[1])) ** 2) ** 0.5, sep='\n')
+    print(org_name, org_address, org_time,lonlat_distance(map(float, point_toponym), map(float, point)) , sep='\n')
     map_params = {
         "l": "map",
         "pt": "{0},pm2dgl~{1},pmntl".format(','.join(point_toponym), ','.join(point))}
