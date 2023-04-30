@@ -1,5 +1,7 @@
+import random
 import requests
-from distanse import lonlat_distance
+
+map_types = ['map', 'sat']
 
 def map_setting(toponym_to_find):
     geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
@@ -12,30 +14,31 @@ def map_setting(toponym_to_find):
     if not response:
         print('ERROR', response)
         return
+
     json_response = response.json()
     toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
     toponym_coodrinates = toponym["Point"]["pos"]
     point_toponym = list(toponym_coodrinates.split())
+    search_api_server = "https://search-maps.yandex.ru/v1/"
+    api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+    address_ll = ','.join(point_toponym)
     search_params = {
-        "apikey": "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3",
-        "text": "аптека",
+        "apikey": api_key,
+        "text": "достопримечательность",
         "lang": "ru_RU",
-        "ll": ','.join(point_toponym),
-        "type": "biz"
-    }
-    response2 = requests.get("https://search-maps.yandex.ru/v1/", params=search_params)
-    if not response2:
-        print('ERROR2', response2)
-        return
+        "ll": address_ll,
+        "type": "biz"}
 
-    json_response = response2.json()
-    organization = json_response["features"][0]
-    org_name = organization["properties"]["CompanyMetaData"]["name"]
-    org_address = organization["properties"]["CompanyMetaData"]["address"]
-    org_time = organization["properties"]["CompanyMetaData"]["Hours"]['text']
-    point = list(map(str, organization["geometry"]["coordinates"]))
-    print(org_name, org_address, org_time,lonlat_distance(map(float, point_toponym), map(float, point)) , sep='\n')
-    map_params = {
-        "l": "map",
-        "pt": "{0},pm2dgl~{1},pmntl".format(','.join(point_toponym), ','.join(point))}
+    response = requests.get(search_api_server, params=search_params)
+    json_response = response.json()
+    map_params = []
+    for i in range(4):
+        map_type = map_types[random.randint(0, 1)]
+        point = json_response["features"][i]["geometry"]["coordinates"]
+        org_point = "{0},{1}".format(point[0], point[1])
+        delta = "0.01"
+        map_params.append({
+            "ll": org_point,
+            "spn": ",".join([delta, delta]),
+            "l": map_type})
     return map_params
